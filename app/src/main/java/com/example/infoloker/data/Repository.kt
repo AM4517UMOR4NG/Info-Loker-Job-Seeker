@@ -1,15 +1,57 @@
 package com.example.infoloker.data
 
+import com.google.gson.GsonBuilder
 import kotlinx.coroutines.delay
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 /**
- * Simple in-memory repository with mock job data so the app can demonstrate
- * searching and filtering without a network dependency.
+ * Repository that can fetch from Remotive (remote) or return mock data.
+ * Provides a single getJobs(...) entry point that accepts optional filters.
  */
 object Repository {
-    suspend fun getJobs(): List<Job> {
-        // Simulate network latency
-        delay(300)
+    private const val REMOTIVE_BASE = "https://remotive.io/"
+
+    // Lazily create Retrofit service
+    private val remotiveApi: RemotiveApi by lazy {
+        val gson = GsonBuilder().create()
+        Retrofit.Builder()
+            .baseUrl(REMOTIVE_BASE)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+            .create(RemotiveApi::class.java)
+    }
+
+    suspend fun getJobs(
+        useRemote: Boolean = true,
+        query: String? = null,
+        category: String? = null,
+        location: String? = null
+    ): List<Job> {
+        return if (useRemote) {
+            try {
+                val resp = remotiveApi.getJobs(query)
+                var jobs = resp.jobs
+                // Apply simple client-side filters if provided
+                jobs = jobs.filter { job ->
+                    val matchesCategory = category.isNullOrBlank() || (job.category?.contains(category, true) ?: false)
+                    val matchesLocation = location.isNullOrBlank() || (job.location?.contains(location, true) ?: false)
+                    val matchesQuery = query.isNullOrBlank() || job.title.contains(query!!, true) || job.companyName.contains(query, true)
+                    matchesCategory && matchesLocation && matchesQuery
+                }
+                jobs
+            } catch (e: Exception) {
+                // On any network/parsing error, fall back to mock data
+                getJobsMock().filterWith(query, category, location)
+            }
+        } else {
+            // Mock path
+            getJobsMock().filterWith(query, category, location)
+        }
+    }
+
+    private suspend fun getJobsMock(): List<Job> {
+        delay(200)
 
         return listOf(
             Job(1, "Android Developer", "ABC Tech", "Software", "Full Time", "2025-10-01", "Indonesia", "https://example.com/1", "Develop Android apps."),
@@ -21,3 +63,14 @@ object Repository {
         )
     }
 }
+
+// Extension helper for filtering mock lists
+private fun List<Job>.filterWith(query: String?, category: String?, location: String?): List<Job> {
+    return this.filter { job ->
+        val matchesCategory = category.isNullOrBlank() || (job.category?.contains(category, true) ?: false)
+        val matchesLocation = location.isNullOrBlank() || (job.location?.contains(location, true) ?: false)
+        val matchesQuery = query.isNullOrBlank() || job.title.contains(query!!, true) || job.companyName.contains(query, true)
+        matchesCategory && matchesLocation && matchesQuery
+    }
+}
+
