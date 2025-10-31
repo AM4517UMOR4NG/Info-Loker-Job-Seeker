@@ -38,14 +38,22 @@ class MainActivity : ComponentActivity() {
 fun AppRoot() {
     var query by remember { mutableStateOf("") }
     var detailJob by remember { mutableStateOf<Job?>(null) }
+    var showProfile by remember { mutableStateOf(false) }
 
     Column {
-        TopAppBar(title = { Text("Info Loker") })
+        TopAppBar(
+            title = { Text("Info Loker") },
+            actions = {
+                IconButton(onClick = { showProfile = true }) {
+                    Icon(imageVector = androidx.compose.material.icons.Icons.Default.Person, contentDescription = "Profile")
+                }
+            }
+        )
 
-        if (detailJob != null) {
-            JobDetailScreen(job = detailJob!!, onBack = { detailJob = null })
-        } else {
-            JobListScreen(
+        when {
+            showProfile -> com.example.infoloker.ui.ProfileScreen(onBack = { showProfile = false })
+            detailJob != null -> JobDetailScreen(job = detailJob!!, onBack = { detailJob = null })
+            else -> JobListScreen(
                 query = query,
                 onQueryChange = { query = it },
                 onOpenDetail = { job -> detailJob = job }
