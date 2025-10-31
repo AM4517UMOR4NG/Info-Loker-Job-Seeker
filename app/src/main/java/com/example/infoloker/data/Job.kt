@@ -11,6 +11,7 @@ data class Job(
     @SerializedName("id") val id: Int,
     @SerializedName("title") val title: String,
     @SerializedName("company_name") val companyName: String,
+    @SerializedName("company_logo_url") val companyLogo: String?,
     @SerializedName("category") val category: String?,
     @SerializedName("job_type") val jobType: String?,
     @SerializedName("publication_date") val publicationDate: String?,
