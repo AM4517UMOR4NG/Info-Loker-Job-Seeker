@@ -2,6 +2,7 @@ package com.example.infoloker.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
@@ -13,6 +14,16 @@ import androidx.compose.ui.unit.dp
 import com.example.infoloker.data.Job
 import com.example.infoloker.data.Repository
 import kotlinx.coroutines.launch
+import coil.compose.AsyncImage
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.Place
 
 @Composable
 fun JobListScreen(
@@ -155,10 +166,38 @@ fun JobListScreen(
         LazyColumn(modifier = Modifier.fillMaxSize().padding(8.dp)) {
             items(items = jobs, key = { it.id }) { job ->
                 Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { onOpenDetail(job) }) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(text = job.title, style = MaterialTheme.typography.subtitle1)
-                        Text(text = job.companyName, style = MaterialTheme.typography.body2)
-                        Text(text = job.location ?: "", style = MaterialTheme.typography.caption)
+                    Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        val avatarSize: Dp = 48.dp
+                        if (!job.companyLogo.isNullOrBlank()) {
+                            AsyncImage(
+                                model = job.companyLogo,
+                                contentDescription = "Company Logo",
+                                modifier = Modifier.size(avatarSize).clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            // fallback icon
+                            Box(modifier = Modifier.size(avatarSize), contentAlignment = Alignment.Center) {
+                                Icon(imageVector = Icons.Default.AccountCircle, contentDescription = "logo")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = job.title, style = MaterialTheme.typography.subtitle1)
+                            Text(text = job.companyName, style = MaterialTheme.typography.body2)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(imageVector = Icons.Default.Place, contentDescription = "location", modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(text = job.location ?: "", style = MaterialTheme.typography.caption)
+                            }
+                        }
+
+                        Column(horizontalAlignment = Alignment.End) {
+                            Icon(imageVector = Icons.Default.Work, contentDescription = "type", modifier = Modifier.size(20.dp))
+                            Text(text = job.jobType ?: "", style = MaterialTheme.typography.caption)
+                        }
                     }
                 }
             }
